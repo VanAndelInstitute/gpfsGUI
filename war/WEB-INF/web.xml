@@ -8,12 +8,12 @@
   <!-- Servlets -->
   <servlet>
     <servlet-name>greetServlet</servlet-name>
-    <servlet-class>com.zaxxis.gpfs.server.GreetingServiceImpl</servlet-class>
+    <servlet-class>com.zaxxis.gpfs.server.GPFSServiceImpl</servlet-class>
   </servlet>
   
   <servlet-mapping>
     <servlet-name>greetServlet</servlet-name>
-    <url-pattern>/gpfsgui/greet</url-pattern>
+    <url-pattern>/gpfsgui/gpfsservice</url-pattern>
   </servlet-mapping>
   
   <!-- Default page to serve -->
