@@ -4,20 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.HasText;
 import com.google.gwt.user.client.ui.Image;
-import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.Widget;
 import com.sencha.gxt.data.shared.ListStore;
@@ -25,10 +20,12 @@ import com.sencha.gxt.widget.core.client.ContentPanel;
 import com.sencha.gxt.widget.core.client.Dialog;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.Popup;
-import com.sencha.gxt.widget.core.client.container.HBoxLayoutContainer;
-import com.sencha.gxt.widget.core.client.container.HorizontalLayoutContainer;
 import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
+import com.sencha.gxt.widget.core.client.event.HideEvent;
+import com.sencha.gxt.widget.core.client.event.HideEvent.HideHandler;
+import com.sencha.gxt.widget.core.client.event.SelectEvent;
+import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
 import com.sencha.gxt.widget.core.client.grid.ColumnConfig;
 import com.sencha.gxt.widget.core.client.grid.ColumnModel;
 import com.sencha.gxt.widget.core.client.grid.Grid;
@@ -58,23 +55,28 @@ public class NodesList extends Composite
 	{
 		initWidget(uiBinder.createAndBindUi(this));
 		drawTable();
-		showImagePopup();
+		reloadState();
+	}
+	
+	private void reloadState()
+	{
+		final LoadingPopup loading = new LoadingPopup("Loading mmgetstate..",grid);
 		gpfsService.getMMState(new AsyncCallback<List<NodeState>>(){
 
 			@Override
 			public void onFailure(Throwable caught) {
-				popupImage.hide();
+				loading.hide();
 				
 			}
 
 			@Override
 			public void onSuccess(List<NodeState> result) {
 				store.replaceAll(result);
-				popupImage.hide();
+				loading.hide();
 				
 			}});
-		
 	}
+	
 	void drawTable()
 	{
 		 List<ColumnConfig<NodeState, ?>> columnDefs = new ArrayList<ColumnConfig<NodeState, ?>>();
@@ -104,18 +106,31 @@ public class NodesList extends Composite
 			public void onSelection(SelectionEvent<Item> event) 
 			{					
 					NodeState selected = grid.getSelectionModel().getSelectedItem();
+					final LoadingPopup loading = new LoadingPopup("Loading log for " + selected.getNodeName() + "...",log);
 					gpfsService.runCmd("\"ssh root@" + selected.getNodeName() + " cat /var/mmfs/gen/mmfslog\"", new AsyncCallback<String>(){
 
 						@Override
 						public void onFailure(Throwable caught) {
 							caught.printStackTrace();
+							loading.hide();
 						}
 
 						@Override
 						public void onSuccess(String result) {
-							log.setText(result);							
+							log.setText(result);
+							loading.hide();
 						}});
 					
+			}
+		 });
+	    MenuItem refresh = new MenuItem();
+	    contextMenu.add(refresh);
+	    refresh.setText("Refresh");
+	    refresh.addSelectionHandler(new SelectionHandler<Item>(){
+			@Override
+			public void onSelection(SelectionEvent<Item> event) 
+			{					
+					reloadState();					
 			}
 		});
 	    
@@ -139,28 +154,40 @@ public class NodesList extends Composite
 				}
 			});
 	     }
-        
-	   
-
 	}
 	
-	private void showImagePopup() 
-	{
-	        final Image image = new Image("/images/loading1.gif");
-	        popupImage.add(image);
-	        popupImage.show();
-	        popupImage.setPosition(100, 100);
-	}
-	
-	private void doGPFSConfirm(String s)
+	private void doGPFSConfirm(final String s)
 	{
 		Dialog d = new Dialog();
 		 d.setHeadingText("GPFS system change confirmation!");
 		 d.setWidget(new HTML("run: <br/><strong> \"" + s + "\"</strong><br/> ARE YOU SURE?!?!"));
 		 d.setBodyStyle("fontWeight:bold;padding:13px;");
-		 d.setPixelSize(500, 300);
+		 d.setPixelSize(400, 200);
 		 d.setHideOnButtonClick(true);
 		 d.setPredefinedButtons(PredefinedButton.YES, PredefinedButton.CANCEL);
 		 d.show();
+		
+		 d.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler(){
+
+			@Override
+			public void onSelect(SelectEvent event)
+			{
+				final LoadingPopup loading = new LoadingPopup("running cmd: " + s + "  ...",log);
+				gpfsService.runCmd("\"uname -a;sleep 2\"", new AsyncCallback<String>(){
+
+					@Override
+					public void onFailure(Throwable caught) {
+						caught.printStackTrace();
+						loading.hide();
+					}
+
+					@Override
+					public void onSuccess(String result) {
+						log.setText(result);
+						loading.hide();
+						reloadState();
+					}});
+				
+			}});
 	}
 }

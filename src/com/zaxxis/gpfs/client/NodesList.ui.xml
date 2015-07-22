@@ -7,7 +7,7 @@
 	<gxt:ContentPanel ui:field="gridPanel" headingText="Client Nodes">
 		<container:VerticalLayoutContainer ui:field="vlc">
 		<container:SimpleContainer ui:field="table"/>
-		<g:TextArea height="400px" width="1000px" ui:field="log"/>
+		<g:TextArea height="350px" width="1000px" ui:field="log"/>
 		</container:VerticalLayoutContainer>	
     		
 	 		
