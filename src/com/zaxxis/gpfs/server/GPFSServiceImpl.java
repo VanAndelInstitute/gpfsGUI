@@ -3,6 +3,7 @@ package com.zaxxis.gpfs.server;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -61,17 +62,39 @@ public class GPFSServiceImpl extends RemoteServiceServlet implements GPFSService
 	public List<NodeState> getMMState() 
 	{
 		List<NodeState> nodes = new ArrayList<>();
-		String[] lines = execCmd("mmgetstate -a").split("\n");
+		HashMap<String,NodeState> nodeMap = new HashMap<String,NodeState>();
+		String[] lines = execCmd("mmgetstate -aL").split("\n");
 		for(int i=3;i < lines.length;i++)
 		{
 			
 			String[] vals = lines[i].trim().split("\\s+");
+			if(vals.length < 4)
+				continue;
 			NodeState n = new NodeState();
 			n.setNodeNumber(vals[0]);
 			n.setNodeName(vals[1]);
-			n.setNodeState(vals[2]);
+			n.setNodeState(vals[5]);
+			n.setAlreadyInGPFS(true);
 			nodes.add(n);
+			nodeMap.put(n.getNodeNumber(),n);
 		}
+		
+		
+		String lines2[] = execCmd("mmlscluster").split("\n");
+		for(int i=17;i < lines2.length;i++)
+		{
+			
+			String[] vals = lines2[i].trim().split("\\s+");
+			if(vals.length < 3)
+				continue;
+			nodeMap.get(vals[0]).setNodeIP(vals[2]);
+			if(vals.length > 4)
+				nodeMap.get(vals[0]).setNodeRole(vals[4]);
+			else
+				nodeMap.get(vals[0]).setNodeRole("");
+		}
+		
+		
 		return nodes;
 		
 	}

@@ -9,7 +9,8 @@ public class NodeState implements Serializable
 	String nodeName;
 	String nodeState;
 	Boolean alreadyInGPFS;
-	
+	String nodeIP;
+	String nodeRole;
 	
 	public String getKey()
 	{
@@ -44,5 +45,18 @@ public class NodeState implements Serializable
 	public void setAlreadyInGPFS(Boolean alreadyInGPFS) {
 		this.alreadyInGPFS = alreadyInGPFS;
 	}
+	public String getNodeIP() {
+		return nodeIP;
+	}
+	public void setNodeIP(String nodeIP) {
+		this.nodeIP = nodeIP;
+	}
+	public String getNodeRole() {
+		return nodeRole;
+	}
+	public void setNodeRole(String nodeRole) {
+		this.nodeRole = nodeRole;
+	}
+	
 
 }

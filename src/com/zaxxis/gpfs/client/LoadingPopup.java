@@ -12,7 +12,7 @@ public class LoadingPopup extends Popup
 	{
 		super();
 		VerticalLayoutContainer v = new VerticalLayoutContainer();
-		final Image image = new Image("/images/loading1.gif");
+		final Image image = new Image("images/loading1.gif");
         this.add(v);
 		v.add(image);
         v.add(new HTML(msg));
@@ -23,7 +23,7 @@ public class LoadingPopup extends Popup
 	{
 		super();
 		VerticalLayoutContainer v = new VerticalLayoutContainer();
-		final Image image = new Image("/images/loading1.gif");
+		final Image image = new Image("images/loading1.gif");
         this.add(v);
 		v.add(image);
         v.add(new HTML(msg));

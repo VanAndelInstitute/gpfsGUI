@@ -20,6 +20,7 @@ import com.sencha.gxt.widget.core.client.ContentPanel;
 import com.sencha.gxt.widget.core.client.Dialog;
 import com.sencha.gxt.widget.core.client.Dialog.PredefinedButton;
 import com.sencha.gxt.widget.core.client.Popup;
+import com.sencha.gxt.widget.core.client.box.AlertMessageBox;
 import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
 import com.sencha.gxt.widget.core.client.event.HideEvent;
@@ -80,12 +81,12 @@ public class NodesList extends Composite
 	void drawTable()
 	{
 		 List<ColumnConfig<NodeState, ?>> columnDefs = new ArrayList<ColumnConfig<NodeState, ?>>();
-		 ColumnConfig<NodeState, String> cc1 = new ColumnConfig<NodeState, String>(properties.nodeNumber(), 250, "Node Number");
-		 ColumnConfig<NodeState, String> cc2 = new ColumnConfig<NodeState, String>(properties.nodeName(), 220, "Node Name");
-		 ColumnConfig<NodeState, String> cc3 = new ColumnConfig<NodeState, String>(properties.nodeState(), 220, "Node State");
-		 columnDefs.add(cc1);
-		 columnDefs.add(cc2);
-		 columnDefs.add(cc3);
+		 columnDefs.add(new ColumnConfig<NodeState, String>(properties.nodeNumber(), 70, "Node #"));
+		 columnDefs.add(new ColumnConfig<NodeState, String>(properties.nodeName(), 200, "Node Name"));
+		 columnDefs.add(new ColumnConfig<NodeState, String>(properties.nodeIP(), 220, "Node IP"));
+		 columnDefs.add(new ColumnConfig<NodeState, String>(properties.nodeRole(), 220, "Node Role"));
+		 columnDefs.add(new ColumnConfig<NodeState, String>(properties.nodeState(), 180, "Node State"));
+		
 		 ColumnModel<NodeState> colModel = new ColumnModel<NodeState>(columnDefs);
 		 grid = new Grid<NodeState>(store, colModel);
 		 grid.setHeight(Window.getClientHeight() - 400);
@@ -135,7 +136,7 @@ public class NodesList extends Composite
 		});
 	    
 	    //gpfs node ops
-	    String[] ops = {"mmshutdown -N","mmstartup -N","mmsdrrestore -N", "mmaddnode -N","mmdelnode -N","mmchlicense client --accept -N"};
+	    String[] ops = {"ping -c 3","mmshutdown -N","mmstartup -N","mmsdrrestore -N", "mmaddnode -N","mmdelnode -N","mmchlicense client --accept -N"};
 	    for(final String op:ops)
 	    {
 	    	MenuItem action = new MenuItem();
@@ -145,12 +146,22 @@ public class NodesList extends Composite
 				@Override
 				public void onSelection(SelectionEvent<Item> event) 
 				{					
+						boolean safeToRunOnNSD = true;
 						List<NodeState> selected = grid.getSelectionModel().getSelectedItems();
+						for(NodeState n : selected)
+							if(n.getNodeRole().toLowerCase().contains("quo") && op.toLowerCase().contains("mm"))
+								safeToRunOnNSD = false;
 						String nodeList = "";
 						for(NodeState s : selected)
 							nodeList += s.getNodeName() + ",";
 						nodeList =  nodeList.substring(0, nodeList.length()-1);
-						doGPFSConfirm(op + " " + nodeList);
+						if(safeToRunOnNSD)
+							doGPFSConfirm(op + " " + nodeList);
+						else
+							{ 
+								AlertMessageBox alert = new AlertMessageBox("Error, NSD operations must be done via console", "This tool has disabled modifying NSDs for safety reasons");
+								alert.show();
+							}
 				}
 			});
 	     }
@@ -173,7 +184,7 @@ public class NodesList extends Composite
 			public void onSelect(SelectEvent event)
 			{
 				final LoadingPopup loading = new LoadingPopup("running cmd: " + s + "  ...",log);
-				gpfsService.runCmd("\"uname -a;sleep 2\"", new AsyncCallback<String>(){
+				gpfsService.runCmd("\"" + s + "\"", new AsyncCallback<String>(){
 
 					@Override
 					public void onFailure(Throwable caught) {

@@ -10,4 +10,6 @@ public interface NodeStateModel  extends PropertyAccess<NodeState>
 	 ValueProvider<NodeState, String> nodeName();
 	 ValueProvider<NodeState, String> nodeState();
 	 ValueProvider<NodeState, Boolean> alreadyInGPFS();
+	 ValueProvider<NodeState, String> nodeIP();
+	 ValueProvider<NodeState, String> nodeRole();
 }

@@ -3,15 +3,20 @@
 	xmlns:g="urn:import:com.google.gwt.user.client.ui"
 	xmlns:gxt="urn:import:com.sencha.gxt.widget.core.client"
 	xmlns:container="urn:import:com.sencha.gxt.widget.core.client.container">
-	
+	<container:VerticalLayoutContainer>
 	<gxt:ContentPanel ui:field="gridPanel" headingText="Client Nodes">
 		<container:VerticalLayoutContainer ui:field="vlc">
 		<container:SimpleContainer ui:field="table"/>
-		<g:TextArea height="350px" width="1000px" ui:field="log"/>
-		</container:VerticalLayoutContainer>	
+		</container:VerticalLayoutContainer>
+	</gxt:ContentPanel>	
+	<gxt:ContentPanel headingText="Command Log">
+		<g:TextArea height="350px" width="100%" ui:field="log"/>
+	</gxt:ContentPanel>
+		
     		
 	 		
 		
-	</gxt:ContentPanel>
+	
+	</container:VerticalLayoutContainer>
 	
 </ui:UiBinder> 
