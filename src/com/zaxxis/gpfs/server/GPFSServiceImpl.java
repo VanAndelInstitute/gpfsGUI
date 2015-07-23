@@ -9,6 +9,7 @@ import java.util.Properties;
 
 import com.zaxxis.gpfs.client.GPFSService;
 import com.zaxxis.gpfs.shared.NodeState;
+import com.zaxxis.gpfs.shared.TableData;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 /**
@@ -97,6 +98,23 @@ public class GPFSServiceImpl extends RemoteServiceServlet implements GPFSService
 		
 		return nodes;
 		
+	}
+
+
+	@Override
+	public List<TableData> getTabularData(String cmd) {
+		List<TableData> table = new ArrayList<TableData>();
+		String[] lines = execCmd(cmd).split("\n");
+		for(int i=0;i < lines.length;i++)
+		{
+			String[] vals = lines[i].trim().split("\\s+");
+			
+			TableData n = new TableData();
+			for(String v:vals)
+				n.add(v);
+			table.add(n);
+		}
+		return table;
 	}
 	
 	

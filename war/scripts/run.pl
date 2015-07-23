@@ -1,3 +1,3 @@
 #!/usr/bin/perl
-
-system(join(" ", @ARGV));
+my $cmd = join(" ", @ARGV);
+system("$cmd 2>\&1");

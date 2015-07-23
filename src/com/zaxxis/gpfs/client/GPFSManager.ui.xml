@@ -1,0 +1,11 @@
+<!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+	xmlns:g="urn:import:com.google.gwt.user.client.ui"
+	xmlns:gxt="urn:import:com.sencha.gxt.widget.core.client" 
+	xmlns:gpfs="urn:import:com.zaxxis.gpfs.client"
+    xmlns:container="urn:import:com.sencha.gxt.widget.core.client.container">
+	<gxt:ContentPanel ui:field="gridPanel" headingText="GPFS Manager -  0.1">
+	  <gxt:TabPanel ui:field="tab">
+	  </gxt:TabPanel>
+	</gxt:ContentPanel>
+</ui:UiBinder> 

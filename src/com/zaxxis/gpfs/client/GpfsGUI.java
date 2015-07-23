@@ -14,8 +14,8 @@ public class GpfsGUI implements EntryPoint {
 	public void onModuleLoad() 
 	{
 		Viewport viewport = new Viewport();
-		NodesList nl = new NodesList();
-		viewport.setWidget(nl);
+		GPFSManager man = new GPFSManager();
+		viewport.setWidget(man);
 		RootLayoutPanel.get().add(viewport);
 	}
 }

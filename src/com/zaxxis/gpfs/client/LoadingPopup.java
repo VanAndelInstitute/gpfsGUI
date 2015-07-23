@@ -4,6 +4,7 @@ import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Widget;
 import com.sencha.gxt.widget.core.client.Popup;
+import com.sencha.gxt.widget.core.client.container.Container;
 import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
 
 public class LoadingPopup extends Popup
@@ -30,5 +31,12 @@ public class LoadingPopup extends Popup
         this.show();
         this.setPosition(w.getAbsoluteLeft() + 30, w.getAbsoluteTop() + 30);
 	}
-
+	static Container getLoadingPanel(String msg)
+	{
+		VerticalLayoutContainer v = new VerticalLayoutContainer();
+		final Image image = new Image("images/loading1.gif");
+        v.add(image);
+        v.add(new HTML(msg));
+        return v;
+	}
 }

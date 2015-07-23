@@ -12,7 +12,6 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.Widget;
 import com.sencha.gxt.data.shared.ListStore;
@@ -23,10 +22,11 @@ import com.sencha.gxt.widget.core.client.Popup;
 import com.sencha.gxt.widget.core.client.box.AlertMessageBox;
 import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
-import com.sencha.gxt.widget.core.client.event.HideEvent;
-import com.sencha.gxt.widget.core.client.event.HideEvent.HideHandler;
+import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer.VerticalLayoutData;
 import com.sencha.gxt.widget.core.client.event.SelectEvent;
 import com.sencha.gxt.widget.core.client.event.SelectEvent.SelectHandler;
+import com.sencha.gxt.widget.core.client.form.FieldLabel;
+import com.sencha.gxt.widget.core.client.form.TextField;
 import com.sencha.gxt.widget.core.client.grid.ColumnConfig;
 import com.sencha.gxt.widget.core.client.grid.ColumnModel;
 import com.sencha.gxt.widget.core.client.grid.Grid;
@@ -38,15 +38,13 @@ import com.zaxxis.gpfs.shared.NodeStateModel;
 
 public class NodesList extends Composite
 {
-
-	
 	private static NodesListUiBinder uiBinder = GWT.create(NodesListUiBinder.class);
 	interface NodesListUiBinder extends UiBinder<Widget, NodesList> {}
 	private final GPFSServiceAsync gpfsService = GWT.create(GPFSService.class);
-	@UiField ContentPanel gridPanel;
 	@UiField VerticalLayoutContainer vlc;
 	@UiField SimpleContainer table;
 	@UiField TextArea log;
+	@UiField ContentPanel logPanel;
 	private static final NodeStateModel properties = GWT.create(NodeStateModel.class);
 	ListStore<NodeState> store=new ListStore<NodeState>(properties.key());
 	Grid<NodeState> grid;
@@ -107,12 +105,13 @@ public class NodesList extends Composite
 			public void onSelection(SelectionEvent<Item> event) 
 			{					
 					NodeState selected = grid.getSelectionModel().getSelectedItem();
+					logPanel.setHeadingText("Command Log: " + selected.getNodeName() + ": cat /var/mmfs/gen/mmfslog");
 					final LoadingPopup loading = new LoadingPopup("Loading log for " + selected.getNodeName() + "...",log);
 					gpfsService.runCmd("\"ssh root@" + selected.getNodeName() + " cat /var/mmfs/gen/mmfslog\"", new AsyncCallback<String>(){
 
 						@Override
 						public void onFailure(Throwable caught) {
-							caught.printStackTrace();
+							log.setText(caught.getMessage());
 							loading.hide();
 						}
 
@@ -165,6 +164,49 @@ public class NodesList extends Composite
 				}
 			});
 	     }
+	    
+	    //add a new node to the pool
+	    MenuItem add = new MenuItem();
+	    contextMenu.add(add);
+	    add.setText("Add new node to cluster");
+	    add.addSelectionHandler(new SelectionHandler<Item>(){
+			@Override
+			public void onSelection(SelectionEvent<Item> event) 
+			{					
+					addNode();					
+			}
+		});
+	    
+	    
+	}
+	
+	private void addNode()
+	{
+		 Dialog d = new Dialog();
+		 d.setHeadingText("Add new node to GPFS Cluster");
+		 final TextField nodeName = new TextField();
+		 VerticalLayoutContainer nameBox = new VerticalLayoutContainer();
+		 nameBox.add(new FieldLabel(nodeName, "Node Host name to add"), new VerticalLayoutData(1, -1));
+		 d.setWidget(nameBox);
+		 d.setBodyStyle("fontWeight:bold;padding:13px;");
+		 d.setPixelSize(500, 200);
+		 d.setHideOnButtonClick(true);
+		 d.setPredefinedButtons(PredefinedButton.OK, PredefinedButton.CANCEL);
+		 d.show();
+		
+		 d.getButton(PredefinedButton.OK).addSelectHandler(new SelectHandler(){
+			@Override
+			public void onSelect(SelectEvent event)
+			{
+				NodeState n = new NodeState();
+				n.setAlreadyInGPFS(false);
+				n.setNodeIP("Pending...");
+				n.setNodeNumber("Pending");
+				n.setNodeRole("Pending");
+				n.setNodeName(nodeName.getText().trim());
+				n.setNodeState("Pending (run mmaddnode!)");
+				store.add(n);
+			}});
 	}
 	
 	private void doGPFSConfirm(final String s)
@@ -183,12 +225,13 @@ public class NodesList extends Composite
 			@Override
 			public void onSelect(SelectEvent event)
 			{
+				logPanel.setHeadingText("Command Log: " + s);
 				final LoadingPopup loading = new LoadingPopup("running cmd: " + s + "  ...",log);
 				gpfsService.runCmd("\"" + s + "\"", new AsyncCallback<String>(){
 
 					@Override
 					public void onFailure(Throwable caught) {
-						caught.printStackTrace();
+						log.setText(caught.getMessage());
 						loading.hide();
 					}
 
