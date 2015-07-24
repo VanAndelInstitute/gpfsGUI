@@ -1,12 +1,12 @@
 package com.zaxxis.gpfs.server;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
-
 import com.zaxxis.gpfs.client.GPFSService;
 import com.zaxxis.gpfs.shared.NodeState;
 import com.zaxxis.gpfs.shared.TableData;
@@ -19,6 +19,7 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 public class GPFSServiceImpl extends RemoteServiceServlet implements GPFSService 
 {
 
+	//should pull from prop ie "cmd1" instead of allow the actual string to be run.
 	public String runCmd(String input) 
 	{
 		return execCmd(input);
@@ -115,6 +116,27 @@ public class GPFSServiceImpl extends RemoteServiceServlet implements GPFSService
 			table.add(n);
 		}
 		return table;
+	}
+
+
+	@Override
+	public HashMap<String, String> getConfig()
+	{
+		HashMap<String,String> config = new HashMap<String,String>();
+		Properties prop = new Properties();
+		try
+		{
+			prop.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
+			for(String s : prop.stringPropertyNames())
+				config.put(s, prop.getProperty(s));
+					
+
+		} catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return config;
 	}
 	
 	

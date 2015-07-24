@@ -1,7 +1,7 @@
 package com.zaxxis.gpfs.client;
 
+import java.util.HashMap;
 import java.util.List;
-
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.zaxxis.gpfs.shared.NodeState;
 import com.zaxxis.gpfs.shared.TableData;
@@ -16,4 +16,6 @@ public interface GPFSServiceAsync {
 	void getMMState(AsyncCallback<List<NodeState>> callback);
 
 	void getTabularData(String cmd, AsyncCallback<List<TableData>> callback);
+
+	void getConfig(AsyncCallback<HashMap<String, String>> callback);
 }
