@@ -4,7 +4,7 @@
 	xmlns:gxt="urn:import:com.sencha.gxt.widget.core.client" 
 	xmlns:gpfs="urn:import:com.zaxxis.gpfs.client"
     xmlns:container="urn:import:com.sencha.gxt.widget.core.client.container">
-	<gxt:ContentPanel ui:field="gridPanel" headingText="GPFS Manager -  0.1">
+	<gxt:ContentPanel ui:field="gridPanel" headingText="GPFS Manager -  0.2a">
 	  <gxt:TabPanel ui:field="tab">
 	  </gxt:TabPanel>
 	</gxt:ContentPanel>

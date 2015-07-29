@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+
 import com.zaxxis.gpfs.client.GPFSService;
 import com.zaxxis.gpfs.shared.NodeState;
 import com.zaxxis.gpfs.shared.TableData;
@@ -20,11 +21,27 @@ public class GPFSServiceImpl extends RemoteServiceServlet implements GPFSService
 {
 
 	//should pull from prop ie "cmd1" instead of allow the actual string to be run.
-	public String runCmd(String input) 
+	@Override
+	public String runCmd(String nodeop, List<String> hosts) 
 	{
-		return execCmd(input);
+		String nodeList = "";
+		String ret = "Error running cmd";
+		for(String s : hosts)
+			nodeList += s + ",";
+		nodeList =  nodeList.substring(0, nodeList.length()-1);
+		
+		Properties prop = new Properties();
+		try
+		{
+			prop.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
+			String cmd = prop.getProperty(nodeop);
+			ret = execCmd(cmd + " " + nodeList);
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		return ret;
 	}
-
 	
 	private String execCmd(String cmd)
 	{
@@ -37,7 +54,10 @@ public class GPFSServiceImpl extends RemoteServiceServlet implements GPFSService
 			String host = prop.getProperty("execHost");
 			
 			String[] aCmdArgs = {script,"ssh root@"+host,cmd};
+			System.err.println("Running: " + script + " " + "ssh root@"+host + " " + cmd);
 			Runtime oRuntime = Runtime.getRuntime();
+			//if(cmd.contains("getstate") || cmd.contains("mmls")) { //for testing
+			
 			Process oProcess = null;
 			
 			oProcess = oRuntime.exec(aCmdArgs);			
@@ -47,7 +67,7 @@ public class GPFSServiceImpl extends RemoteServiceServlet implements GPFSService
 				ret += line + "\n";
 			
 			oProcess.waitFor();
-			
+			//}
 			return ret;
 			
 			
@@ -103,17 +123,26 @@ public class GPFSServiceImpl extends RemoteServiceServlet implements GPFSService
 
 
 	@Override
-	public List<TableData> getTabularData(String cmd) {
+	public List<TableData> getTabularData(String nodeop) {
 		List<TableData> table = new ArrayList<TableData>();
-		String[] lines = execCmd(cmd).split("\n");
-		for(int i=0;i < lines.length;i++)
+		Properties prop = new Properties();
+		try
 		{
-			String[] vals = lines[i].trim().split("\\s+");
-			
-			TableData n = new TableData();
-			for(String v:vals)
-				n.add(v);
-			table.add(n);
+			prop.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
+			String cmd = prop.getProperty(nodeop);
+			String[] lines = execCmd(cmd).split("\n");
+			for(int i=0;i < lines.length;i++)
+			{
+				String[] vals = lines[i].trim().split("\\s+");
+				
+				TableData n = new TableData();
+				for(String v:vals)
+					n.add(v);
+				table.add(n);
+			}
+		} catch (IOException e)
+		{
+			e.printStackTrace();
 		}
 		return table;
 	}
@@ -133,11 +162,33 @@ public class GPFSServiceImpl extends RemoteServiceServlet implements GPFSService
 
 		} catch (IOException e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return config;
 	}
+
+
+	@Override
+	public String getLogForHosts(List<String> hosts) 
+	{
+		//TODO add support for multiple host log merging
+		String ret = "Error getting log.";
+		Properties prop = new Properties();
+		try
+		{
+			prop.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
+			String logCMD = "\"ssh root@" + hosts.get(0) + " " +  prop.getProperty("logcmd") + "\"";
+			ret=execCmd(logCMD);
+			
+		} catch (IOException e)
+		{
+			ret=e.getMessage();
+		}
+		return ret;
+		
+	}
+
+
 	
 	
 }

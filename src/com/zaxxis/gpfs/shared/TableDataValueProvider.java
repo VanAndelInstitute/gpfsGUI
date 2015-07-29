@@ -12,7 +12,10 @@ public class TableDataValueProvider implements ValueProvider<TableData,String>
 	
 	@Override
 	public String getValue(TableData object) {
-		return object.get(index);
+		if(index < object.size())
+			return object.get(index);
+		else
+			return "";
 	}
 
 	@Override

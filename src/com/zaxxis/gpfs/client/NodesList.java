@@ -1,6 +1,7 @@
 package com.zaxxis.gpfs.client;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.google.gwt.core.client.GWT;
@@ -65,14 +66,12 @@ public class NodesList extends Composite
 			@Override
 			public void onFailure(Throwable caught) {
 				loading.hide();
-				
 			}
 
 			@Override
 			public void onSuccess(List<NodeState> result) {
 				store.replaceAll(result);
 				loading.hide();
-				
 			}});
 	}
 	
@@ -95,7 +94,7 @@ public class NodesList extends Composite
 	
 	public void addContextMenu() 
 	{
-	    Menu contextMenu= new Menu();
+	    final Menu contextMenu= new Menu();
 	    grid.setContextMenu(contextMenu);
 	    MenuItem viewlog = new MenuItem();
 	    contextMenu.add(viewlog);
@@ -104,11 +103,14 @@ public class NodesList extends Composite
 			@Override
 			public void onSelection(SelectionEvent<Item> event) 
 			{					
-					NodeState selected = grid.getSelectionModel().getSelectedItem();
-					logPanel.setHeadingText("Command Log: " + selected.getNodeName() + ": cat /var/mmfs/gen/mmfslog");
-					final LoadingPopup loading = new LoadingPopup("Loading log for " + selected.getNodeName() + "...",log);
-					gpfsService.runCmd("\"ssh root@" + selected.getNodeName() + " cat /var/mmfs/gen/mmfslog\"", new AsyncCallback<String>(){
-
+					List<String> nodes = new ArrayList<String>();
+					for(NodeState n :grid.getSelectionModel().getSelectedItems())
+						nodes.add(n.getNodeName());
+					
+					
+					logPanel.setHeadingText("Command Log: GPFS log for: " + nodes.get(0));
+					final LoadingPopup loading = new LoadingPopup("Loading log for " + nodes.get(0) + "...",log);
+					gpfsService.getLogForHosts(nodes, new AsyncCallback<String>(){
 						@Override
 						public void onFailure(Throwable caught) {
 							log.setText(caught.getMessage());
@@ -133,37 +135,52 @@ public class NodesList extends Composite
 					reloadState();					
 			}
 		});
-	    
-	    //gpfs node ops
-	    String[] ops = {"ping -c 3","mmshutdown -N","mmstartup -N","mmsdrrestore -N", "mmaddnode -N","mmdelnode -N","mmchlicense client --accept -N"};
-	    for(final String op:ops)
-	    {
-	    	MenuItem action = new MenuItem();
-	    	contextMenu.add(action);
-	    	action.setText(op);
-	    	action.addSelectionHandler(new SelectionHandler<Item>(){
-				@Override
-				public void onSelection(SelectionEvent<Item> event) 
-				{					
-						boolean safeToRunOnNSD = true;
-						List<NodeState> selected = grid.getSelectionModel().getSelectedItems();
-						for(NodeState n : selected)
-							if(n.getNodeRole().toLowerCase().contains("quo") && op.toLowerCase().contains("mm"))
-								safeToRunOnNSD = false;
-						String nodeList = "";
-						for(NodeState s : selected)
-							nodeList += s.getNodeName() + ",";
-						nodeList =  nodeList.substring(0, nodeList.length()-1);
-						if(safeToRunOnNSD)
-							doGPFSConfirm(op + " " + nodeList);
-						else
-							{ 
-								AlertMessageBox alert = new AlertMessageBox("Error, NSD operations must be done via console", "This tool has disabled modifying NSDs for safety reasons");
-								alert.show();
-							}
+	 
+	    //get gpfs node ops from config file and create actions
+		 
+	    gpfsService.getConfig(new AsyncCallback<HashMap<String,String>>(){
+			@Override
+			public void onFailure(Throwable caught) 
+			{
+				caught.printStackTrace();
+			}
+
+			@Override
+			public void onSuccess(final HashMap<String, String> result)
+			{
+				for(int i = 1; result.containsKey("nodeop" + i);i++)
+				{
+					final int j=i;
+					MenuItem action = new MenuItem();
+			    	contextMenu.add(action);
+			    	action.setText(result.get("nodeop"+i+"title"));
+			    	action.addSelectionHandler(new SelectionHandler<Item>(){
+						@Override
+						public void onSelection(SelectionEvent<Item> event) 
+						{					
+								String nodelist = "";
+								boolean safeToRunOnNSD = true;
+								List<String> nodes = new ArrayList<String>();
+								for(NodeState n: grid.getSelectionModel().getSelectedItems())
+								{
+									nodelist += n.getNodeName() + ",";
+									nodes.add(n.getNodeName());
+									if(n.getNodeRole().toLowerCase().contains("quo") && result.get("nodeop"+j).toLowerCase().contains("mm"))
+										safeToRunOnNSD = false;
+								}
+								nodelist =  nodelist.substring(0, nodelist.length()-1);
+									
+								if(safeToRunOnNSD)
+									doGPFSConfirm("nodeop"+j,result.get("nodeop"+j) + " " + nodelist ,nodes);
+								else
+								{ 
+									AlertMessageBox alert = new AlertMessageBox("Error, NSD operations must be done via console", "This tool has disabled modifying NSDs for safety reasons");
+									alert.show();
+								}
+						}
+					});
 				}
-			});
-	     }
+			}});
 	    
 	    //add a new node to the pool
 	    MenuItem add = new MenuItem();
@@ -187,9 +204,10 @@ public class NodesList extends Composite
 		 final TextField nodeName = new TextField();
 		 VerticalLayoutContainer nameBox = new VerticalLayoutContainer();
 		 nameBox.add(new FieldLabel(nodeName, "Node Host name to add"), new VerticalLayoutData(1, -1));
+		 nameBox.add(new HTML("you can enter a single node, ex: node044 <br/> or many nodes like: node001,node002,node003,node004,node005,node006,node007,node008,node009,node010,node011,node012,node013,node014,node015,node016,node017,node018,node019,node020,<br/>node021,node022,node023,node024,node025,node026,node027,node028,node029,node030,node031,node032,node033,node034,node035,node036,node037,node038,node039,node040"));
 		 d.setWidget(nameBox);
 		 d.setBodyStyle("fontWeight:bold;padding:13px;");
-		 d.setPixelSize(500, 200);
+		 d.setPixelSize(600, 300);
 		 d.setHideOnButtonClick(true);
 		 d.setPredefinedButtons(PredefinedButton.OK, PredefinedButton.CANCEL);
 		 d.show();
@@ -198,22 +216,26 @@ public class NodesList extends Composite
 			@Override
 			public void onSelect(SelectEvent event)
 			{
-				NodeState n = new NodeState();
-				n.setAlreadyInGPFS(false);
-				n.setNodeIP("Pending...");
-				n.setNodeNumber("Pending");
-				n.setNodeRole("Pending");
-				n.setNodeName(nodeName.getText().trim());
-				n.setNodeState("Pending (run mmaddnode!)");
-				store.add(n);
+				String[] nodes = nodeName.getText().trim().split(",");
+				for(String node : nodes)
+				{
+					NodeState n = new NodeState();
+					n.setAlreadyInGPFS(false);
+					n.setNodeIP("Pending...");
+					n.setNodeNumber("Pending "+node );
+					n.setNodeRole("Pending");
+					n.setNodeName(node);
+					n.setNodeState("Pending (run mmaddnode!)");
+					store.add(n);
+				}
 			}});
 	}
 	
-	private void doGPFSConfirm(final String s)
+	private void doGPFSConfirm(final String nodeop, final String cmdString, final List<String> nodes)
 	{
 		Dialog d = new Dialog();
 		 d.setHeadingText("GPFS system change confirmation!");
-		 d.setWidget(new HTML("run: <br/><strong> \"" + s + "\"</strong><br/> ARE YOU SURE?!?!"));
+		 d.setWidget(new HTML("run: <br/><strong> \"" + cmdString + "\"</strong><br/> ARE YOU SURE?!?!"));
 		 d.setBodyStyle("fontWeight:bold;padding:13px;");
 		 d.setPixelSize(400, 200);
 		 d.setHideOnButtonClick(true);
@@ -225,9 +247,9 @@ public class NodesList extends Composite
 			@Override
 			public void onSelect(SelectEvent event)
 			{
-				logPanel.setHeadingText("Command Log: " + s);
-				final LoadingPopup loading = new LoadingPopup("running cmd: " + s + "  ...",log);
-				gpfsService.runCmd("\"" + s + "\"", new AsyncCallback<String>(){
+				logPanel.setHeadingText("Command Log: " + cmdString);
+				final LoadingPopup loading = new LoadingPopup("running cmd: " + cmdString + "  ...",log);
+				gpfsService.runCmd(nodeop,nodes, new AsyncCallback<String>(){
 
 					@Override
 					public void onFailure(Throwable caught) {

@@ -12,9 +12,10 @@ import com.zaxxis.gpfs.shared.TableData;
  */
 @RemoteServiceRelativePath("gpfsservice")
 public interface GPFSService extends RemoteService {
-	String runCmd(String name);
+	String runCmd(String nodeop,List<String> hosts);
 	List<NodeState> getMMState();
 	List<TableData> getTabularData(String cmd);
 	HashMap<String,String> getConfig();
+	String getLogForHosts(List<String> hosts);
 	
 }

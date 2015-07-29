@@ -3,9 +3,10 @@
 	xmlns:g="urn:import:com.google.gwt.user.client.ui"
 	xmlns:gxt="urn:import:com.sencha.gxt.widget.core.client"
 	xmlns:container="urn:import:com.sencha.gxt.widget.core.client.container">
-	<container:VerticalLayoutContainer ui:field="vlc">
-		<container:SimpleContainer ui:field="tablePanel"/>
-	</container:VerticalLayoutContainer>
+<!-- 	<container:VerticalLayoutContainer ui:field="vlc"> -->
+	
+		<container:VerticalLayoutContainer ui:field="tablePanel"/>
+<!-- 	</container:VerticalLayoutContainer> -->
 	
 	
 </ui:UiBinder> 
