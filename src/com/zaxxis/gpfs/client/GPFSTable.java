@@ -11,22 +11,20 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.Widget;
 import com.sencha.gxt.core.client.dom.ScrollSupport.ScrollMode;
 import com.sencha.gxt.data.shared.ListStore;
 import com.sencha.gxt.data.shared.ModelKeyProvider;
-import com.sencha.gxt.widget.core.client.container.MarginData;
+import com.sencha.gxt.widget.core.client.ContentPanel;
+import com.sencha.gxt.widget.core.client.container.FlowLayoutContainer;
 import com.sencha.gxt.widget.core.client.container.SimpleContainer;
-import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
-import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer.VerticalLayoutData;
 import com.sencha.gxt.widget.core.client.grid.ColumnConfig;
 import com.sencha.gxt.widget.core.client.grid.ColumnModel;
 import com.sencha.gxt.widget.core.client.grid.Grid;
 import com.sencha.gxt.widget.core.client.menu.Item;
 import com.sencha.gxt.widget.core.client.menu.Menu;
 import com.sencha.gxt.widget.core.client.menu.MenuItem;
-import com.zaxxis.gpfs.shared.NodeState;
 import com.zaxxis.gpfs.shared.TableData;
 import com.zaxxis.gpfs.shared.TableDataValueProvider;
 
@@ -36,7 +34,9 @@ public class GPFSTable extends Composite
 	private static GPFSTableUiBinder uiBinder = GWT.create(GPFSTableUiBinder.class);
 	interface GPFSTableUiBinder extends UiBinder<Widget, GPFSTable> { }
 	private final GPFSServiceAsync gpfsService = GWT.create(GPFSService.class);
-	@UiField VerticalLayoutContainer tablePanel;
+	@UiField FlowLayoutContainer table;
+	@UiField TextArea log;
+	@UiField ContentPanel logPanel;
 	Grid<TableData> grid;
 	ListStore<TableData> store = new ListStore<TableData>(new ModelKeyProvider<TableData>() {
 	    @Override
@@ -48,31 +48,30 @@ public class GPFSTable extends Composite
 	String ExecCmd = "uname -a";
 	String[] columns = {"none"};
 	
-	
-	
 	public GPFSTable(String nodeop,String cmd,String[] columns)
 	{
 		initWidget(uiBinder.createAndBindUi(this));
-		tablePanel.setHeight(Window.getClientHeight());
-		tablePanel.forceLayout();
+		table.setHeight(Window.getClientHeight() - 400);
+		table.setScrollMode(ScrollMode.ALWAYS);
 		this.nodeop = nodeop;
 		this.ExecCmd = cmd;
 		this.columns=columns;
 		reloadState();
 	}
 	
-
 	private void reloadState()
 	{
-		tablePanel.add(LoadingPopup.getLoadingPanel("loading \'" + ExecCmd + "\'"));
-		//final LoadingPopup loading = new LoadingPopup("Loading..." + ExecCmd,grid);
+		
+		log.setText("Loading: " + ExecCmd);
+		logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
 		gpfsService.getTabularData(nodeop, new AsyncCallback<List<TableData>>(){
 
 			@Override
 			public void onFailure(Throwable caught) {
 				caught.printStackTrace();
-				tablePanel.add(new HTML("Error running " + ExecCmd));
-			
+				//loading.hide();
+				log.setText("Error running " + ExecCmd + ": " + caught.toString() );
+				logPanel.setHeadingText("Command Log");
 			}
 
 			@Override
@@ -83,18 +82,12 @@ public class GPFSTable extends Composite
 					 columnDefs.add(new ColumnConfig<TableData, String>(new TableDataValueProvider(i), 1000 / store.get(0).size(), i < columns.length ? columns[i] : "Column " + i));
 				 ColumnModel<TableData> colModel = new ColumnModel<TableData>(columnDefs); 
 				 grid = new Grid<TableData>(store, colModel);
-				 grid.setHeight(Window.getClientHeight() - 30);
+				 table.clear();
+				 table.setHeight(Window.getClientHeight() - 400);
+				 table.add(grid);
+				  log.setText("Completed: " + ExecCmd);
+				 logPanel.setHeadingText("Command Log");
 				 addContextMenu(); 
-				 
-				 
-				 
-				 
-				//tablePanel.add(grid);
-				tablePanel.clear();
-				tablePanel.add(grid,new VerticalLayoutData(1, -1));
-				tablePanel.forceLayout();
-				tablePanel.getScrollSupport().setScrollMode(ScrollMode.ALWAYS);;
-							
 			}});
 	}
 	

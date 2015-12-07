@@ -5,17 +5,12 @@
 	xmlns:container="urn:import:com.sencha.gxt.widget.core.client.container">
 	<container:VerticalLayoutContainer>
 		<container:VerticalLayoutContainer ui:field="vlc">
-		<container:SimpleContainer ui:field="table"/>
+			<container:SimpleContainer ui:field="table"/>
 		</container:VerticalLayoutContainer>
 	
-	<gxt:ContentPanel headingText="Command Log" ui:field="logPanel">
-		<g:TextArea height="350px" width="100%" ui:field="log"/>
-	</gxt:ContentPanel>
-		
-    		
-	 		
-		
-	
+		<gxt:ContentPanel headingText="Command Log" ui:field="logPanel">
+			<g:TextArea height="350px" width="100%" ui:field="log"/>
+		</gxt:ContentPanel>
 	</container:VerticalLayoutContainer>
 	
 </ui:UiBinder> 

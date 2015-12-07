@@ -60,18 +60,21 @@ public class NodesList extends Composite
 	
 	private void reloadState()
 	{
-		final LoadingPopup loading = new LoadingPopup("Loading mmgetstate..",grid);
+		log.setText("Loading: mmgetstate -a");
+		logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
 		gpfsService.getMMState(new AsyncCallback<List<NodeState>>(){
 
 			@Override
 			public void onFailure(Throwable caught) {
-				loading.hide();
+				log.setText("Error runnning mmstate -a. " + caught.getMessage());
+				logPanel.setHeadingText("Command Log");
 			}
 
 			@Override
 			public void onSuccess(List<NodeState> result) {
 				store.replaceAll(result);
-				loading.hide();
+				log.setText("Completed: mmgetstate -a");
+				logPanel.setHeadingText("Command Log");
 			}});
 	}
 	
@@ -109,20 +112,21 @@ public class NodesList extends Composite
 					
 					
 					logPanel.setHeadingText("Command Log: GPFS log for: " + nodes.get(0));
-					final LoadingPopup loading = new LoadingPopup("Loading log for " + nodes.get(0) + "...",log);
+					log.setText("Loading log for " + nodes.get(0) + "...");
+					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
 					gpfsService.getLogForHosts(nodes, new AsyncCallback<String>(){
 						@Override
 						public void onFailure(Throwable caught) {
 							log.setText(caught.getMessage());
-							loading.hide();
+							logPanel.setHeadingText("Command Log");
+							
 						}
 
 						@Override
 						public void onSuccess(String result) {
 							log.setText(result);
-							loading.hide();
+							logPanel.setHeadingText("Command Log");
 						}});
-					
 			}
 		 });
 	    MenuItem refresh = new MenuItem();
@@ -241,29 +245,28 @@ public class NodesList extends Composite
 		 d.setHideOnButtonClick(true);
 		 d.setPredefinedButtons(PredefinedButton.YES, PredefinedButton.CANCEL);
 		 d.show();
-		
 		 d.getButton(PredefinedButton.YES).addSelectHandler(new SelectHandler(){
 
 			@Override
 			public void onSelect(SelectEvent event)
 			{
 				logPanel.setHeadingText("Command Log: " + cmdString);
-				final LoadingPopup loading = new LoadingPopup("running cmd: " + cmdString + "  ...",log);
+				log.setText("running cmd: " + cmdString + "  ...");
+				logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
 				gpfsService.runCmd(nodeop,nodes, new AsyncCallback<String>(){
 
 					@Override
 					public void onFailure(Throwable caught) {
 						log.setText(caught.getMessage());
-						loading.hide();
+						logPanel.setHeadingText("Command Log");
 					}
 
 					@Override
 					public void onSuccess(String result) {
 						log.setText(result);
-						loading.hide();
+						logPanel.setHeadingText("Command Log");
 						reloadState();
 					}});
-				
 			}});
 	}
 }
