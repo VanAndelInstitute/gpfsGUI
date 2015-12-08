@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.core.client.Scheduler.RepeatingCommand;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.uibinder.client.UiBinder;
@@ -18,7 +20,6 @@ import com.sencha.gxt.data.shared.ListStore;
 import com.sencha.gxt.data.shared.ModelKeyProvider;
 import com.sencha.gxt.widget.core.client.ContentPanel;
 import com.sencha.gxt.widget.core.client.container.FlowLayoutContainer;
-import com.sencha.gxt.widget.core.client.container.SimpleContainer;
 import com.sencha.gxt.widget.core.client.grid.ColumnConfig;
 import com.sencha.gxt.widget.core.client.grid.ColumnModel;
 import com.sencha.gxt.widget.core.client.grid.Grid;
@@ -47,6 +48,7 @@ public class GPFSTable extends Composite
 	String nodeop = "nodeop1";
 	String ExecCmd = "uname -a";
 	String[] columns = {"none"};
+	boolean processingWait=false;
 	
 	public GPFSTable(String nodeop,String cmd,String[] columns)
 	{
@@ -63,7 +65,7 @@ public class GPFSTable extends Composite
 	{
 		
 		log.setText("Loading: " + ExecCmd);
-		logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
+		processingAnim();
 		gpfsService.getTabularData(nodeop, new AsyncCallback<List<TableData>>(){
 
 			@Override
@@ -71,7 +73,7 @@ public class GPFSTable extends Composite
 				caught.printStackTrace();
 				//loading.hide();
 				log.setText("Error running " + ExecCmd + ": " + caught.toString() );
-				logPanel.setHeadingText("Command Log");
+				processingWait = false;
 			}
 
 			@Override
@@ -85,8 +87,8 @@ public class GPFSTable extends Composite
 				 table.clear();
 				 table.setHeight(Window.getClientHeight() - 400);
 				 table.add(grid);
-				  log.setText("Completed: " + ExecCmd);
-				 logPanel.setHeadingText("Command Log");
+				 log.setText("Completed: " + ExecCmd);
+				 processingWait = false;
 				 addContextMenu(); 
 			}});
 	}
@@ -106,6 +108,21 @@ public class GPFSTable extends Composite
 			}
 		});
 	}
-	
+	private void processingAnim()
+	{
+		processingWait = true;
+		logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
+		 Scheduler.get().scheduleIncremental(new RepeatingCommand(){
+			@Override
+			public boolean execute() {
+				if(logPanel.getHTML().contains("-"))
+					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log: PROCESSING  &nbsp;|</font>");
+				else
+					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log: PROCESSING ---</font>");
+				if(processingWait == false)
+					logPanel.setHeadingText("Command Log");
+				return processingWait;
+			}}); 
+	}
 	
 }

@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.core.client.Scheduler.RepeatingCommand;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.uibinder.client.UiBinder;
@@ -50,6 +52,7 @@ public class NodesList extends Composite
 	ListStore<NodeState> store=new ListStore<NodeState>(properties.key());
 	Grid<NodeState> grid;
 	Popup popupImage = new Popup();
+	boolean processingWait=false;
 	
 	public NodesList() 
 	{
@@ -61,20 +64,20 @@ public class NodesList extends Composite
 	private void reloadState()
 	{
 		log.setText("Loading: mmgetstate -a");
-		logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
+		processingAnim();
 		gpfsService.getMMState(new AsyncCallback<List<NodeState>>(){
 
 			@Override
 			public void onFailure(Throwable caught) {
 				log.setText("Error runnning mmstate -a. " + caught.getMessage());
-				logPanel.setHeadingText("Command Log");
+				processingWait = false;
 			}
 
 			@Override
 			public void onSuccess(List<NodeState> result) {
 				store.replaceAll(result);
 				log.setText("Completed: mmgetstate -a");
-				logPanel.setHeadingText("Command Log");
+				processingWait = false;
 			}});
 	}
 	
@@ -110,22 +113,20 @@ public class NodesList extends Composite
 					for(NodeState n :grid.getSelectionModel().getSelectedItems())
 						nodes.add(n.getNodeName());
 					
-					
-					logPanel.setHeadingText("Command Log: GPFS log for: " + nodes.get(0));
 					log.setText("Loading log for " + nodes.get(0) + "...");
-					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
+					processingAnim();
 					gpfsService.getLogForHosts(nodes, new AsyncCallback<String>(){
 						@Override
 						public void onFailure(Throwable caught) {
 							log.setText(caught.getMessage());
-							logPanel.setHeadingText("Command Log");
+							processingWait = false;
 							
 						}
 
 						@Override
 						public void onSuccess(String result) {
 							log.setText(result);
-							logPanel.setHeadingText("Command Log");
+							processingWait = false;
 						}});
 			}
 		 });
@@ -250,23 +251,39 @@ public class NodesList extends Composite
 			@Override
 			public void onSelect(SelectEvent event)
 			{
-				logPanel.setHeadingText("Command Log: " + cmdString);
 				log.setText("running cmd: " + cmdString + "  ...");
-				logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
+				processingAnim();
 				gpfsService.runCmd(nodeop,nodes, new AsyncCallback<String>(){
 
 					@Override
 					public void onFailure(Throwable caught) {
 						log.setText(caught.getMessage());
-						logPanel.setHeadingText("Command Log");
+						processingWait = false;
 					}
 
 					@Override
 					public void onSuccess(String result) {
 						log.setText(result);
-						logPanel.setHeadingText("Command Log");
+						processingWait = false;
 						reloadState();
 					}});
 			}});
+	}
+	
+	private void processingAnim()
+	{
+		processingWait = true;
+		logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
+		 Scheduler.get().scheduleIncremental(new RepeatingCommand(){
+			@Override
+			public boolean execute() {
+				if(logPanel.getHTML().contains("-"))
+					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log: PROCESSING  &nbsp;|</font>");
+				else
+					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log: PROCESSING ---</font>");
+				if(processingWait == false)
+					logPanel.setHeadingText("Command Log");
+				return processingWait;
+			}}); 
 	}
 }
