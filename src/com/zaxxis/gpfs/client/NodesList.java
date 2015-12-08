@@ -63,8 +63,7 @@ public class NodesList extends Composite
 	
 	private void reloadState()
 	{
-		log.setText("Loading: mmgetstate -a");
-		processingAnim();
+		processingAnim(" mmgetstate -a");
 		gpfsService.getMMState(new AsyncCallback<List<NodeState>>(){
 
 			@Override
@@ -76,7 +75,6 @@ public class NodesList extends Composite
 			@Override
 			public void onSuccess(List<NodeState> result) {
 				store.replaceAll(result);
-				log.setText("Completed: mmgetstate -a");
 				processingWait = false;
 			}});
 	}
@@ -114,7 +112,7 @@ public class NodesList extends Composite
 						nodes.add(n.getNodeName());
 					
 					log.setText("Loading log for " + nodes.get(0) + "...");
-					processingAnim();
+					processingAnim("loading log for "+ nodes.get(0) );
 					gpfsService.getLogForHosts(nodes, new AsyncCallback<String>(){
 						@Override
 						public void onFailure(Throwable caught) {
@@ -252,7 +250,7 @@ public class NodesList extends Composite
 			public void onSelect(SelectEvent event)
 			{
 				log.setText("running cmd: " + cmdString + "  ...");
-				processingAnim();
+				processingAnim(cmdString);
 				gpfsService.runCmd(nodeop,nodes, new AsyncCallback<String>(){
 
 					@Override
@@ -270,17 +268,17 @@ public class NodesList extends Composite
 			}});
 	}
 	
-	private void processingAnim()
+	private void processingAnim(final String msg)
 	{
 		processingWait = true;
 		logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log - PROCESSING</font>");
 		 Scheduler.get().scheduleIncremental(new RepeatingCommand(){
 			@Override
 			public boolean execute() {
-				if(logPanel.getHTML().contains("-"))
-					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log: PROCESSING  &nbsp;|</font>");
+				if(logPanel.getHTML().substring(1, 72).contains("-"))
+					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log: PROCESSING <font face='courier'> &nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" + msg + "</font></font>");
 				else
-					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log: PROCESSING ---</font>");
+					logPanel.setHeadingHtml("<font color='#FFFF00'>Command Log: PROCESSING <font face='courier'>  ---&nbsp;&nbsp;&nbsp;" + msg + "</font></font>");
 				if(processingWait == false)
 					logPanel.setHeadingText("Command Log");
 				return processingWait;
